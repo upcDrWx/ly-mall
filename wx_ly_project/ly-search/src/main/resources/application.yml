@@ -1,0 +1,34 @@
+server:
+  port: 8093
+spring:
+  application:
+    name: search-service
+  rabbitmq:
+      host: 192.168.112.101
+      username: leyou
+      password: leyou
+      virtual-host: /leyou
+  datasource:
+    url: jdbc:mysql://localhost:3306/leyou
+    username: user04
+    password: 1234
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+  data:
+    elasticsearch:
+      cluster-name: elasticsearch
+      cluster-nodes: 192.168.112.101:9300
+  jackson:
+    default-property-inclusion: non_null
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:10086/eureka
+    registry-fetch-interval-seconds: 5
+ribbon:
+  ReadTimeout: 60000
+  ConnectTimeout: 60000
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1

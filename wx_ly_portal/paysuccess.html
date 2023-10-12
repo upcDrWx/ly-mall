@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE">
+		<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7" />
+		<title>支付页-成功</title>
+	
+    <link rel="stylesheet" type="text/css" href="css/webbase.css" />
+    <link rel="stylesheet" type="text/css" href="css/pages-paysuccess.css" />
+</head>
+
+	<body>
+		<!--head-->
+		<!--页面顶部白条条，由js动态加载-->
+		<script type="text/javascript" src="plugins/jquery/jquery.min.js"></script>
+		<div class="top"></div>
+		<div class="cart py-container">
+			<!--主内容-->
+			<div class="paysuccess" id="paySuccessVm">
+				<div class="success">
+					<h3><img src="img/_/right.png" width="48" height="48">　恭喜您，支付成功啦！</h3>
+					<div class="paydetail">
+					<p>支付方式：微信支付</p>
+					<p>支付金额：￥{{ly.formatPrice(order.actualPay)}}元</p>
+					<p class="button"><a href="home.html" class="sui-btn btn-xlarge btn-danger">查看订单</a>&nbsp;&nbsp;&nbsp;&nbsp;<a href="index.html" class="sui-btn btn-xlarge ">继续购物</a></p>
+				    </div>
+				</div>
+			</div>
+		</div>
+<script src="./js/vue/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script src="./js/common.js"></script>
+<script src="./js/qrcode.min.js"></script>
+<script>
+    var payVm = new Vue({
+        el: "#paySuccessVm",
+        data:{
+            ly,
+            order: {},
+			orderId:0,
+        },
+        created() {
+            ly.verifyUser().then(res => {
+                const id= ly.getUrlParam("orderId");
+                this.orderId=id;
+                ly.http.get("/order/order/" + id).then(resp => {
+                    //1.删除本地数据
+                    ly.store.del("selectedCarts");
+                    this.order = resp.data;
+                    console.log(resp.data);
+
+                    //2.支付成功更新购物车数据
+					//2.1获取已经购买的商品的id
+                    ly.http.get("/order/order/skuId/" + this.orderId).then(({data})=>{
+                        data.forEach(skuId=>{
+                            //2.2删除
+							ly.http.delete("/cart/"+skuId).then(()=>{
+                                console.log("购物车更新成功");
+							})
+						})
+					}).catch(()=>{
+					    console.log("购物车更新失败");
+					});
+                });
+            });
+		}
+    });
+</script>
+<script type="text/javascript" src="js/plugins/jquery/jquery.min.js"></script>
+<script type="text/javascript" src="js/plugins/jquery.easing/jquery.easing.min.js"></script>
+<script type="text/javascript" src="js/plugins/sui/sui.min.js"></script>
+<script type="text/javascript" src="components/ui-modules/nav/nav-portal-top.js"></script>
+</body>
+
+</html>

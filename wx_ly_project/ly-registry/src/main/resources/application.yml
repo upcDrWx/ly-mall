@@ -1,0 +1,21 @@
+server:
+  port: 10086
+spring:
+  application:
+    name: ly-registry
+  datasource:
+    url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=utf8
+    username: root
+    password: 178318
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+eureka:
+  client:
+    fetchRegistry: false
+    registerWithEureka: false
+    serviceUrl:
+      defaultZone: http://127.0.0.1:${server.port}/eureka
+  server:
+    enableSelfPreservation: false # 关闭自我保护
+    evictionIntervalTimerInMs: 5000 # 每隔5秒进行一次服务列表清理

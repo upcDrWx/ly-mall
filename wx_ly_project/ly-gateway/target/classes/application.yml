@@ -1,0 +1,66 @@
+server:
+  port: 10010
+spring:
+  application:
+    name: api-gateway
+  datasource:
+    url: jdbc:mysql://localhost:3306/leyou
+    username: user04
+    password: 1234
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:10086/eureka
+    registryFetchIntervalSeconds: 10
+  instance:
+    preferIpAddress: true
+    ipAddress: 127.0.0.1
+    instanceId: ${spring.application.name}:${server.port}
+zuul:
+  prefix: /api # 添加路由前缀
+  retryable: true
+  routes:
+    item-service: /item/** # 将商品微服务映射到/item/**
+    search-service: /search/**
+    user-service: /user/**
+    sms-service: /sms/**
+    auth-service: /auth/**
+    cart-service: /cart/**
+    order-service: /order/**
+    upload-service:
+      path: /upload/**
+      serviceId: upload-service
+      strip-prefix: false
+  host:
+      socket-timeout-millis: 100000
+      connect-timeout-millis: 100000
+  add-host-header: true #携带请求本身的host头信息
+  sensitive-headers: #禁止使用头的信息，设置为null，否则set-cookie无效
+ribbon:
+  ConnectTimeout: 100000 # 连接超时时间(ms)
+  ReadTimeout: 100000 # 通信超时时间(ms)
+  MaxAutoRetriesNextServer: 0 # 同一服务不同实例的重试次数
+  MaxAutoRetries: 0 # 同一实例的重试次数
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMillisecond: 100000 # 熔断超时时长：5000ms
+ly:
+  jwt:
+    pubKeyPath: F:/IdeaProjects/HwjProjects/auth/rsa/rsa.pub # 公钥地址
+    cookieName: LY_TOKEN
+  filter:
+    allowPaths:
+      - /api/auth
+      - /api/search
+      - /api/user/register
+      - /api/user/check
+      - /api/user/code
+      - /api/item #临时放行，因为需要用登录
+      - /zuul/api/upload

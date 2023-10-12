@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE">
+	<meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+	<title>微信支付页</title>
+	<link rel="icon" href="/assets/img/favicon.ico">
+
+
+	<link rel="stylesheet" type="text/css" href="css/webbase.css"/>
+	<link rel="stylesheet" type="text/css" href="css/pages-weixinpay.css"/>
+</head>
+
+<body>
+
+<!--页面顶部白条条，由js动态加载-->
+<div id="payVm">
+	<div class="top">
+		<shortcut/>
+	</div>
+
+	<div class="cart py-container">
+		<!--主内容-->
+
+		<a href="payfail.html">支付失败演示页</a>
+		<a href="paysuccess.html">支付成功演示页</a>
+
+
+		<div class="checkout py-container  pay">
+			<div class="checkout-tit">
+				<h4 class="fl tit-txt">
+					<span class="success-icon"></span>
+					<span class="success-info">订单提交成功，请您及时付款！订单号：{{orderId}}</span>
+				</h4>
+				<span class="fr">
+						<em class="sui-lead">应付金额：</em>
+						<em class="orange money">￥{{ly.formatPrice(totalPay)}}</em>元</span>
+				<div class="clearfix"></div>
+			</div>
+			<div class="checkout-steps">
+				<div class="fl weixin">微信支付</div>
+				<div class="fl sao">
+
+					<div class="fl code">
+						<div id="qrcode"></div>
+						<div class="saosao">
+							<p>请使用微信扫一扫</p>
+							<p>扫描二维码支付</p>
+						</div>
+					</div>
+					<div class="fl phone">
+
+					</div>
+
+				</div>
+				<div class="clearfix"></div>
+			</div>
+		</div>
+
+	</div>
+</div>
+
+<script src="./js/vue/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script src="./js/common.js"></script>
+<script src="./js/qrcode.min.js"></script>
+<script>
+    var payVm = new Vue({
+        el: "#payVm",
+        data:{
+            ly,
+           orderId:0,
+		   order: {},
+		   totalPay:0,
+        },
+        created() {
+            //1.判断用户是否登录
+            ly.verifyUser().then(res => {
+                // this.orderId= ly.getUrlParam("orderId");
+                // this.selected=ly.store.get("selectedCarts");
+                // const id=this.orderId;
+				//2.从本地获取订单编号和总金额
+                this.orderId = ly.store.get("orderId");
+                this.totalPay = ly.store.get("totalPay");
+                // 查询订单
+                ly.http.get("/order/order/" + this.orderId).then(resp => {
+                    // this.order = resp.data;
+                    // console.log(resp.data);
+                    // 生成付款链接
+                    ly.http.get("/order/order/url/" + this.orderId).then(resp => {
+                        //生成付款二维码
+                        new QRCode("qrcode",{
+                                    text: resp.data,
+                                    width: 250,
+                                    height: 250,
+                                    colorDark: "#00AA00",
+                                    colorLight: "#ffffff",
+                                    correctLevel: QRCode.CorrectLevel.H
+                        });
+                    })
+                   // 开启定时任务，查询付款状态
+                    const taskId = setInterval(() => {
+
+                        ly.http.get("/order/order/state/" + this.orderId)
+                            .then(resp => {
+                                let i = resp.data;
+                                if (i === 1) {
+                                    // 付款成功
+                                    clearInterval(taskId);
+                                    // 跳转到付款成功页
+                                    location.href = "/paysuccess.html?orderId=" + this.orderId;
+                                    //删除本地存储中的订单号
+									ly.store.del("orderId");
+                                } else if (i === 2) {
+                                    // 付款失败
+                                    clearInterval(taskId);
+                                    // 跳转到付款失败页
+                                    location.href = "/payfail.html";
+                                }
+                            })
+                    }, 3000);
+                })
+            }).catch(() => {
+                window.location = "http://www.leyou.com/login.html?returnUrl=http://www.leyou.com/getOrderInfo.html"
+            })
+        },
+        components: {
+            shortcut: () => import("./js/pages/shortcut.js")
+        }
+    });
+</script>
+
+
+<script type="text/javascript" src="js/plugins/jquery.easing/jquery.easing.min.js"></script>
+<script type="text/javascript" src="js/plugins/sui/sui.min.js"></script>
+<script type="text/javascript" src="js/widget/nav.js"></script>
+
+
+<script type="text/javascript">
+    $(function () {
+        $("ul.payType li").click(function () {
+            $(this).css("border", "2px solid #E4393C").siblings().css("border-color", "#ddd");
+        })
+    })
+</script>
+</body>
+
+</html>

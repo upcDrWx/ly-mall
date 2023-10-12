@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=9; IE=8; IE=7; IE=EDGE">
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7"/>
+    <title>购物车页面</title>
+
+    <link rel="stylesheet" type="text/css" href="css/webbase.css"/>
+    <link rel="stylesheet" type="text/css" href="css/pages-cart.css"/>
+</head>
+
+<body>
+
+<div id="cartApp">
+
+    <div class="top">
+        <shortcut/>
+    </div>
+
+    <div class="cart py-container">
+        <!--All goods-->
+        <div class="allgoods">
+            <h4>全部商品<span>{{total}}</span></h4>
+            <div class="cart-main">
+                <div class="yui3-g cart-th">
+                    <div class="yui3-u-1-4"><input type="checkbox" v-model="selectedAll" :value="!selectedAll"/> 全部</div>
+                    <div class="yui3-u-1-4">商品</div>
+                    <div class="yui3-u-1-8">单价（元）</div>
+                    <div class="yui3-u-1-8">数量</div>
+                    <div class="yui3-u-1-8">小计（元）</div>
+                    <div class="yui3-u-1-8">操作</div>
+                </div>
+                <div class="cart-item-list">
+
+                    <div class="cart-body">
+                        <div class="cart-list" >
+                            <ul class="goods-list yui3-g" v-for="(cart,i) in carts" :key="i">
+                                <li class="yui3-u-1-24">
+                                    <input type="checkbox" name="" :value="cart" v-model="selected"/>
+                                </li>
+                                <li class="yui3-u-11-24">
+                                    <div class="good-item">
+                                        <div class="item-img"><img :src="cart.image" width="80px" height="80px"/></div>
+                                        <div class="item-msg">
+												<span style="line-height:70px ">
+													{{cart.title}} <br>
+                                                    <span v-for="(val,key,index) in JSON.parse(cart.ownSpec)" :key="key">
+                                                        {{key}}:{{val}} &nbsp;
+                                                    </span>
+												</span>
+                                        </div>
+                                    </div>
+                                </li>
+
+                                <li class="yui3-u-1-8"><span style="line-height:70px " class="price">{{ly.formatPrice(cart.price)}}</span>
+                                </li>
+                                <li class="yui3-u-1-8" style="padding-top: 20px">
+                                    <a href="javascript:void(0)" class="increment mins" @click="decrement(cart)">-</a>
+                                    <input autocomplete="off" type="text" v-model="cart.num" minnum="1" class="itxt"/>
+                                    <a href="javascript:void(0)" class="increment plus" @click="increment(cart)">+</a>
+                                </li>
+                                <li class="yui3-u-1-8"><span style="line-height:70px " class="sum">{{ly.formatPrice(cart.price*cart.num)}}</span>
+                                </li>
+                                <li class="yui3-u-1-8">
+                                    <a href="#none" @click="deleteCart(i)">删除</a><br/>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="cart-tool">
+                <div class="select-all">
+                    <input type="checkbox" name="" id="" v-model="selectedAll" :value="!selectedAll"/>
+                    <span>全选</span>
+                </div>
+                <div class="option">
+                    <a href="#none">删除选中的商品</a>
+                    <a href="#none">移到我的关注</a>
+                    <a href="#none">清除下柜商品</a>
+                </div>
+                <div class="toolbar">
+                    <div class="chosed">已选择<span>{{total}}</span>件商品</div>
+                    <div class="sumprice">
+                        <span><em>总价（不含运费） ：</em><i class="summoney">{{ly.formatPrice(totalPrice)}}</i></span>
+                        <span><em>已节省：</em><i>-¥20.00</i></span>
+                    </div>
+                    <div class="sumbtn">
+                        <a class="sum-btn" href="javaScript:void(0)" @click="generateOrder" target="_blank">结算</a>
+                    </div>
+                </div>
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+
+</div>
+<script src="./js/vue/vue.js"></script>
+<script src="./js/axios.min.js"></script>
+<script src="./js/common.js"></script>
+<script type="text/javascript">
+    var cartVm = new Vue({
+        el: "#cartApp",
+        data: {
+            ly,
+            carts: [],
+            selected: [],
+            selectedAll:true
+        },
+        components: {
+            shortcut: () => import("/js/pages/shortcut.js")
+        },
+        created() {
+            this.loadCart();
+        },
+        methods: {
+            increment(cart) {
+                cart.num++;
+                ly.verifyUser().then(() => {
+                    //如果登录了将用户修改的商品数量传到后台
+                    ly.http.put("/cart", ly.stringify({
+                        id:cart.skuId,
+                        num:cart.num
+                    })).catch(()=>{
+                        alert("服务器忙:"+cart.skuId);
+                    })
+                }).catch(() => {
+                    //未登录
+                    ly.store.set("carts", this.carts);
+                })
+            },
+            decrement(cart) {
+                if (cart.num == 1) {
+                    return
+                }
+                cart.num--;
+                ly.verifyUser().then(() => {
+                    //已登录
+                    ly.http.put("/cart", ly.stringify({
+                        id:cart.skuId,
+                        num:cart.num
+                    })).catch(()=>{
+                        alert("服务器忙");
+                    })
+                }).catch(() => {
+                    //未登录
+                    ly.store.set("carts", this.carts);
+                })
+            },
+            deleteCart(i) {
+                ly.verifyUser().then(() => {
+                    //已登录
+                    ly.http.delete("/cart/" + this.carts[i].skuId).then(()=>{
+                        this.carts.splice(i,1);
+                    })
+                }).catch(() => {
+                    //未登录
+                    this.carts.splice(i, 1);
+                    ly.store.set("carts", this.carts)
+                })
+            },
+            addCart(carts){
+                return ly.http.post("/cart",carts);
+            },
+            loadCart() {
+                //先判断登录状态
+                ly.verifyUser().then(() => {
+                    // //已登录
+                    // let localCarts=ly.store.get("carts")||[];
+                    // if(localCarts.length!=0){
+                    //     this.addCart(localCarts).then(()=>ly.store.del("carts"));
+                    // }
+                    //如果登录了去redis查询
+                    ly.http.get("/cart/list").then(({data}) => {
+                        this.carts = data;
+                        this.selected = this.carts;
+                    })
+
+                }).catch(() => {
+                    //未登录时，取本地localStorage数据
+                    const carts = ly.store.get("carts")
+                    this.carts = carts;
+                    this.selected = this.carts;
+                })
+            },
+            generateOrder(){
+                ly.verifyUser().then(()=>{
+                    if(this.selected.length==0){
+                        alert("请先选择要下单的商品");
+                        return;
+                    }
+                    ly.store.set("selectedCarts",this.selected);
+                    window.location="http://www.leyou.com/getOrderInfo.html";
+                }).catch(()=>{
+                    window.location = "login.html?returnUrl=" + window.location;
+                })
+            }
+        },
+        //计算属性，计算商品总价格
+        computed: {
+            total(){
+                return this.selected.reduce((c1, c2) => c1 + c2.num, 0);
+            },
+            totalPrice() {
+                return this.selected.map(cart => cart.num * cart.price).reduce((p1, p2) => p1 + p2, 0);
+            }
+        },
+        watch:{
+            selectedAll:{
+                deep:true,
+                handler(val){
+                    if(val){
+                        this.selected=this.carts;
+                    }else {
+                        this.selected=[];
+                    }
+                }
+            }}
+    })
+</script>
+<script type="text/javascript" src="js/plugins/jquery.easing/jquery.easing.min.js"></script>
+<script type="text/javascript" src="js/plugins/sui/sui.min.js"></script>
+<script type="text/javascript" src="js/widget/nav.js"></script>
+
+</body>
+
+</html>

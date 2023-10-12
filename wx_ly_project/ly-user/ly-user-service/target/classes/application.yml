@@ -1,0 +1,30 @@
+server:
+  port: 8095
+spring:
+  application:
+    name: user-service
+  rabbitmq:
+    host: 192.168.112.101
+    username: leyou
+    password: leyou
+    virtual-host: /leyou
+  redis:
+    #数据库索引
+    database: 0
+    host: 192.168.112.101
+    port: 6379
+    password:
+  datasource:
+    url: jdbc:mysql://localhost:3306/leyou
+    username: user04
+    password: 1234
+    driver-class-name: com.mysql.jdbc.Driver
+eureka:
+  client:
+    service-url:
+      defaultZone: http://127.0.0.1:10086/eureka
+  instance:
+    prefer-ip-address: true
+    ip-address: 127.0.0.1
+mybatis:
+  type-aliases-package: com.leyou.user.pojo

@@ -1,0 +1,41 @@
+server:
+  port: 8085
+spring:
+  application:
+    name: item-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/leyou
+    username: user04
+    password: 1234
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+  rabbitmq:
+    host: 192.168.112.101
+    username: leyou
+    password: leyou
+    virtual-host: /leyou
+    template:
+      retry:
+        enabled: true
+        initial-interval: 10000ms
+        max-interval: 300000ms
+        multiplier: 2
+      exchange: ly.item.exchange
+    publisher-confirms: true
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:10086/eureka
+  instance:
+    leaseRenewalIntervalInSeconds: 5 # 每隔5秒发送一次心跳
+    leaseExpirationDurationInSeconds: 10 # 10秒不发送就过期
+    preferIpAddress: true
+    ipAddress: 127.0.0.1 #保证拿到的一定是ip
+    instanceId: ${spring.application.name}:${server.port}
+ribbon:
+  ReadTimeout: 60000
+  ConnectTimeout: 60000
+mybatis:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
